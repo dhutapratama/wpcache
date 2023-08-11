@@ -9,6 +9,7 @@ import (
 )
 
 func CreateBundleJs() {
+	fmt.Println("Loading: Create Bundle Js")
 	for i, w := range vars.Wordpress {
 		bundleFile := "bundle.min.js"
 		saveDirDirty := fmt.Sprintf("%s/wp-cache/js/", w.RootFolder)

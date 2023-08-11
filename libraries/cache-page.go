@@ -35,7 +35,8 @@ func GetPage(w models.Wordpress) {
 	fmt.Println("Fetching HTML: ", w.Website)
 
 	saveTo := fmt.Sprintf("%s/%s", w.TempFolder, "index.html")
-	cache(w.Website, saveTo)
+	fileIndex := cache(w.Website, saveTo)
+	minify_index(w.MinifiedIndex, fileIndex)
 }
 
 func cache(endPoint, cachePath string) (pathCache string) {

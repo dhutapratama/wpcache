@@ -8,8 +8,11 @@ import (
 func init() {
 	libraries.LoadWordpressJson()
 	libraries.VerifyPath()
+
+	libraries.CreateMinifiedIndex()
 	libraries.CreateBundleCss()
 	libraries.CreateBundleJs()
+
 	libraries.SetupMinifier()
 	fmt.Println()
 }
