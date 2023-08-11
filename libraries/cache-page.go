@@ -112,22 +112,22 @@ func GetAssets(w models.Wordpress) {
 		return
 	}
 
-	parse_html(parsedIndexHtml, w.TempFolder, u, w.BundleCss)
+	parse_html(parsedIndexHtml, w.TempFolder, u, w.BundleCss, w.BundleJs)
 }
 
-func parse_html(n *html.Node, tempFolder string, u *url.URL, wCss io.Writer) {
+func parse_html(n *html.Node, tempFolder string, u *url.URL, wCss io.Writer, wJs io.Writer) {
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
 			parse_style(n, tempFolder, u, wCss)
 		case "img":
-		//	parse_img(n, tempFolder, u)
+			parse_img(n, tempFolder, u)
 		case "script":
-			//	parse_script(n, tempFolder, u)
+			parse_script(n, tempFolder, u, wJs)
 		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parse_html(c, tempFolder, u, wCss)
+		parse_html(c, tempFolder, u, wCss, wJs)
 	}
 }

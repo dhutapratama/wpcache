@@ -8,7 +8,7 @@ import (
 	"wpcache/vars"
 )
 
-func CreateBundlejs() {
+func CreateBundleJs() {
 	for i, w := range vars.Wordpress {
 		bundleFile := "bundle.min.js"
 		saveDirDirty := fmt.Sprintf("%s/wp-cache/js/", w.RootFolder)

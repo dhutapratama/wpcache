@@ -39,15 +39,15 @@ func parse_css(href, tempFolder string, u *url.URL, w io.Writer) {
 		saveTo := fmt.Sprintf("%s/%s", tempFolder, uCss.EscapedPath())
 
 		fmt.Printf("Caching Css: %s\n", href)
-		cssFile := cache(endPoint, saveTo)
+		fileCss := cache(endPoint, saveTo)
 
-		minify_css(w, cssFile)
+		minify_css(w, fileCss)
 	}
 }
 
-func minify_css(w io.Writer, cssFile string) {
+func minify_css(w io.Writer, fileCss string) {
 	var r io.Reader
-	if f, err := os.OpenFile(cssFile, os.O_RDONLY, 0644); err != nil {
+	if f, err := os.OpenFile(fileCss, os.O_RDONLY, 0644); err != nil {
 		fmt.Println(err)
 		return
 	} else {
