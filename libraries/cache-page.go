@@ -3,7 +3,6 @@ package libraries
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"wpcache/models"
@@ -59,22 +58,22 @@ func GetAssets(w models.Wordpress) {
 		return
 	}
 
-	parse_html(parsedIndexHtml, w.TempFolder, u, w.BundleCss, w.BundleJs)
+	parse_html(parsedIndexHtml, w, u)
 }
 
-func parse_html(n *html.Node, tempFolder string, u *url.URL, wCss io.Writer, wJs io.Writer) {
+func parse_html(n *html.Node, w models.Wordpress, u *url.URL) {
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
-			parse_style(n, tempFolder, u, wCss)
+			parse_style(n, w, u)
 		case "img":
-			parse_img(n, tempFolder, u)
+			parse_img(n, w, u)
 		case "script":
-			parse_script(n, tempFolder, u, wJs)
+			parse_script(n, w, u)
 		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parse_html(c, tempFolder, u, wCss, wJs)
+		parse_html(c, w, u)
 	}
 }

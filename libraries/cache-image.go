@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"wpcache/models"
 
 	"golang.org/x/net/html"
 )
 
-func parse_img(n *html.Node, tempFolder string, u *url.URL) {
+func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
 	var urls []string
 
 	for _, element := range n.Attr {
@@ -36,11 +37,11 @@ func parse_img(n *html.Node, tempFolder string, u *url.URL) {
 
 			if u.Host == uImg.Host {
 				endPoint := fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, uImg.EscapedPath())
-				saveTo := fmt.Sprintf("%s/%s", tempFolder, uImg.EscapedPath())
+				saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uImg.EscapedPath())
 
 				fmt.Printf("Caching Img: %s\n", element.Val)
 				imgPath := cache(endPoint, saveTo)
-				ProcessWebp(imgPath)
+				ProcessWebp(imgPath, uImg.EscapedPath(), w)
 			}
 		} else if element.Key == "srcset" {
 			valAntiComma := strings.Split(element.Val, ",")
@@ -76,11 +77,12 @@ func parse_img(n *html.Node, tempFolder string, u *url.URL) {
 
 					if u.Host == uImg.Host {
 						endPoint := fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, uImg.EscapedPath())
-						saveTo := fmt.Sprintf("%s/%s", tempFolder, uImg.EscapedPath())
+						saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uImg.EscapedPath())
 
 						fmt.Printf("Caching Img: %s\n", v2)
 						imgPath := cache(endPoint, saveTo)
-						ProcessWebp(imgPath)
+
+						ProcessWebp(imgPath, uImg.EscapedPath(), w)
 					}
 				}
 			}

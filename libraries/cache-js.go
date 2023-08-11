@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"wpcache/models"
 	"wpcache/vars"
 
 	"golang.org/x/net/html"
 )
 
-func parse_script(n *html.Node, tempFolder string, u *url.URL, w io.Writer, ) {
+func parse_script(n *html.Node, w models.Wordpress, u *url.URL) {
 	for _, element := range n.Attr {
 		if element.Key == "src" {
 
@@ -23,7 +24,7 @@ func parse_script(n *html.Node, tempFolder string, u *url.URL, w io.Writer, ) {
 
 			if u.Host == uJs.Host {
 				endPoint := fmt.Sprintf("%s://%s%s", uJs.Scheme, uJs.Host, uJs.EscapedPath())
-				saveTo := fmt.Sprintf("%s/%s", tempFolder, uJs.EscapedPath())
+				saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uJs.EscapedPath())
 
 				fmt.Printf("Caching Script: %s\n", element.Val)
 				fileJs := cache(endPoint, saveTo)
@@ -34,7 +35,7 @@ func parse_script(n *html.Node, tempFolder string, u *url.URL, w io.Writer, ) {
 	}
 }
 
-func minify_js(w io.Writer, fileJs string) {
+func minify_js(w models.Wordpress, fileJs string) {
 	var r io.Reader
 	if f, err := os.OpenFile(fileJs, os.O_RDONLY, 0644); err != nil {
 		fmt.Println(err)
@@ -44,7 +45,7 @@ func minify_js(w io.Writer, fileJs string) {
 		defer f.Close()
 	}
 
-	if err := vars.MinifierEngine.Minify("application/javascript", w, r); err != nil {
+	if err := vars.MinifierEngine.Minify("application/javascript", w.BundleJs, r); err != nil {
 		fmt.Println(err)
 		return
 	}
