@@ -38,7 +38,7 @@ func GetPage(w models.Wordpress) {
 	cache(w.Website, saveTo)
 }
 
-func cache(endPoint, cachePath string) {
+func cache(endPoint, cachePath string) (pathCache string) {
 	var pathClean []string
 	var path string
 	pathDirty := strings.Split(cachePath, "/")
@@ -86,6 +86,7 @@ func cache(endPoint, cachePath string) {
 	}
 
 	fmt.Println()
+	return path
 }
 
 func GetAssets(w models.Wordpress) {
@@ -111,95 +112,22 @@ func GetAssets(w models.Wordpress) {
 		return
 	}
 
-	parse_html(parsedIndexHtml, w.TempFolder, u)
+	parse_html(parsedIndexHtml, w.TempFolder, u, w.BundleCss)
 }
 
-func parse_html(n *html.Node, tempFolder string, u *url.URL) {
+func parse_html(n *html.Node, tempFolder string, u *url.URL, wCss io.Writer) {
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
-			parse_style(n, tempFolder, u)
+			parse_style(n, tempFolder, u, wCss)
 		case "img":
-			parse_img(n, tempFolder, u)
+		//	parse_img(n, tempFolder, u)
 		case "script":
-			parse_script(n, tempFolder, u)
+			//	parse_script(n, tempFolder, u)
 		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parse_html(c, tempFolder, u)
-	}
-}
-
-func parse_style(n *html.Node, tempFolder string, u *url.URL) {
-	var rel, href string
-
-	for _, element := range n.Attr {
-		if element.Key == "rel" {
-			rel = element.Val
-		} else if element.Key == "href" {
-			href = element.Val
-		}
-	}
-
-	if rel == "stylesheet" {
-		parse_css(href, tempFolder, u)
-	}
-}
-
-func parse_css(href, tempFolder string, u *url.URL) {
-	uCss, err := url.Parse(href)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return
-	}
-
-	if u.Host == uCss.Host {
-		endPoint := fmt.Sprintf("%s://%s%s", uCss.Scheme, uCss.Host, uCss.EscapedPath())
-		saveTo := fmt.Sprintf("%s/%s", tempFolder, uCss.EscapedPath())
-
-		fmt.Printf("Caching Css: %s\n", href)
-		cache(endPoint, saveTo)
-	}
-}
-
-func parse_img(n *html.Node, tempFolder string, u *url.URL) {
-	for _, element := range n.Attr {
-		if element.Key == "src" {
-			uImg, err := url.Parse(element.Val)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				return
-			}
-
-			if u.Host == uImg.Host {
-				endPoint := fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, uImg.EscapedPath())
-				saveTo := fmt.Sprintf("%s/%s", tempFolder, uImg.EscapedPath())
-
-				fmt.Printf("Caching Img: %s\n", element.Val)
-				cache(endPoint, saveTo)
-			}
-		}
-	}
-}
-
-func parse_script(n *html.Node, tempFolder string, u *url.URL) {
-	for _, element := range n.Attr {
-		if element.Key == "src" {
-
-			uJs, err := url.Parse(element.Val)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				return
-			}
-
-			if u.Host == uJs.Host {
-				endPoint := fmt.Sprintf("%s://%s%s", uJs.Scheme, uJs.Host, uJs.EscapedPath())
-				saveTo := fmt.Sprintf("%s/%s", tempFolder, uJs.EscapedPath())
-
-				fmt.Printf("Caching Script: %s\n", element.Val)
-				cache(endPoint, saveTo)
-			}
-		}
+		parse_html(c, tempFolder, u, wCss)
 	}
 }
