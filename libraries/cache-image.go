@@ -74,7 +74,7 @@ func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
 						imgPath := cache(v2, uImg.EscapedPath(), w)
 
 						_, urlWebp := ProcessWebp(imgPath, uImg.EscapedPath(), w)
-						srcsetUrl = append(srcsetUrl, urlWebp)
+						srcsetUrl = append(srcsetUrl, fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, urlWebp))
 					} else {
 						fmt.Println("Outside origin ignoring")
 						fmt.Println()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 	"wpcache/models"
 	"wpcache/vars"
 
@@ -23,8 +24,8 @@ func CachePage() {
 		fmt.Println("Processing: ", w.Name)
 
 		GetPage(w)
-		index := GetAssets(w)
-		RenderHtml(w, index)
+		RenderHtml(w, GetAssets(w))
+		RenderMinifiedHtml(w)
 	}
 }
 
@@ -37,8 +38,7 @@ func GetPage(w models.Wordpress) {
 		return
 	}
 
-	fileIndex := cache(fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
-	minify_index(w.MinifiedIndex, fileIndex)
+	cache(fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
 }
 
 func GetAssets(w models.Wordpress) *html.Node {
@@ -76,7 +76,6 @@ func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
-			fmt.Println(n)
 			if parse_style(n, w, u) {
 				remove = n
 			}
@@ -103,6 +102,7 @@ func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node
 }
 
 func append_bundle(n *html.Node, u *url.URL) {
+	hash := time.Now().Format("20060102150405")
 
 	if n.Type == html.ElementNode {
 		switch n.Data {
@@ -122,7 +122,7 @@ func append_bundle(n *html.Node, u *url.URL) {
 					},
 					{
 						Key: "href",
-						Val: fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, "/wp-cache/css/bundle.min.css"),
+						Val: fmt.Sprintf("%s://%s%s?v=%s", u.Scheme, u.Host, "/wp-cache/css/bundle.min.css", hash),
 					},
 					{
 						Key: "media",
@@ -142,7 +142,7 @@ func append_bundle(n *html.Node, u *url.URL) {
 					},
 					{
 						Key: "src",
-						Val: fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, "/wp-cache/js/bundle.min.js"),
+						Val: fmt.Sprintf("%s://%s%s?v=%s", u.Scheme, u.Host, "/wp-cache/js/bundle.min.js", hash),
 					},
 				},
 			})
