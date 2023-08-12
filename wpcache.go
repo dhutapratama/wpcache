@@ -9,6 +9,7 @@ func init() {
 	libraries.LoadWordpressJson()
 	libraries.VerifyPath()
 
+	libraries.CreateRenderedIndex()
 	libraries.CreateMinifiedIndex()
 	libraries.CreateBundleCss()
 	libraries.CreateBundleJs()

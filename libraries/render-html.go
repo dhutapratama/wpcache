@@ -12,12 +12,12 @@ func RenderHtml(w models.Wordpress, n *html.Node) {
 	fmt.Println("Loading: RenderHtml")
 	fmt.Println()
 
-	if w.MinifiedIndex == nil {
+	if w.RenderedIndex == nil {
 		fmt.Println("Cant minify index")
 		return
 	}
 
-	if err := html.Render(w.MinifiedIndex, n); err != nil {
+	if err := html.Render(w.RenderedIndex, n); err != nil {
 		fmt.Println(err)
 		return
 	}

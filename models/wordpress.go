@@ -12,5 +12,6 @@ type Wordpress struct {
 	Verified      bool
 	BundleCss     *os.File
 	BundleJs      *os.File
+	RenderedIndex *os.File
 	MinifiedIndex *os.File
 }
