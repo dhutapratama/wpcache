@@ -92,5 +92,5 @@ func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
 }
 
 func IsWebp(escapedPath string) bool {
-	return path.Ext(escapedPath) == ".webp"
+	return path.Ext(escapedPath) == ".webp" || path.Ext(escapedPath) == ".gif"
 }
