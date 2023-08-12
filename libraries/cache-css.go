@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func parse_style(n *html.Node, w models.Wordpress, u *url.URL) {
+func parse_style(n *html.Node, w models.Wordpress, u *url.URL) (remove bool) {
 	var rel, href string
 
 	for _, element := range n.Attr {
@@ -24,11 +24,12 @@ func parse_style(n *html.Node, w models.Wordpress, u *url.URL) {
 	}
 
 	if rel == "stylesheet" {
-		parse_css(href, w, u)
+		remove = parse_css(href, w, u)
 	}
+	return
 }
 
-func parse_css(href string, w models.Wordpress, u *url.URL) {
+func parse_css(href string, w models.Wordpress, u *url.URL) (processed bool) {
 	uCss, err := url.Parse(href)
 	if err != nil {
 		fmt.Printf("%s\n", err)
@@ -36,14 +37,19 @@ func parse_css(href string, w models.Wordpress, u *url.URL) {
 	}
 
 	if u.Host == uCss.Host {
-		endPoint := fmt.Sprintf("%s://%s%s", uCss.Scheme, uCss.Host, uCss.EscapedPath())
-		saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uCss.EscapedPath())
-
 		fmt.Printf("Caching Css: %s\n", href)
-		fileCss := cache(endPoint, saveTo)
+		fileCss := cache(href, uCss.EscapedPath(), w)
 
 		minify_css(w, fileCss)
+
+	} else {
+		fmt.Println("Outside origin ignoring")
+		fmt.Println()
+
+		return false
 	}
+
+	return true
 }
 
 func minify_css(w models.Wordpress, fileCss string) {

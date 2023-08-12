@@ -5,40 +5,31 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"runtime"
-	"strings"
+	"path"
+	"wpcache/helpers"
+	"wpcache/models"
 )
 
-func cache(endPoint, cachePath string) (pathCache string) {
-	var pathClean []string
-	var path string
-	pathDirty := strings.Split(cachePath, "/")
+// Download content and save to cache folder.
+func cache(endPoint, escapedPath string, w models.Wordpress) (cache string) {
 
-	// Build path
-	lenPathDirty := len(pathDirty)
-	lenPathDirectory := lenPathDirty - 1
-	for i, v := range pathDirty {
-		if v != "" && i > 0 {
-			pathClean = append(pathClean, v)
+	cache = path.Clean(fmt.Sprintf("%s/%s", w.TempFolder, escapedPath))
+	if IsDownloaded(endPoint) {
+		return cache
+	}
 
-			path = strings.Join(pathClean, "/")
-			if runtime.GOOS == "linux" {
-				path = fmt.Sprintf("/%s", path)
-			} else if runtime.GOOS == "windows" {
-				path = fmt.Sprintf("%s/%s", pathDirty[0], path)
-			}
-
-			if i < lenPathDirectory {
-				if _, err := os.Stat(path); os.IsNotExist(err) {
-					if err := os.Mkdir(path, 0755); err != nil {
-						fmt.Println(err)
-						return
-					}
-				}
-			}
+	// Check existing file
+	if f, exist := helpers.CheckFile(cache); exist {
+		if f.IsDir() {
+			os.RemoveAll(cache)
+		} else {
+			fmt.Println("Content already downloaded")
+			fmt.Println("Cache Path: ", cache)
+			return
 		}
 	}
 
+	// Download content and save to cachePath
 	if response, err := http.Get(endPoint); err != nil {
 		fmt.Printf("%v\n", err)
 		return
@@ -49,13 +40,25 @@ func cache(endPoint, cachePath string) (pathCache string) {
 			return
 		}
 
-		fmt.Println("Cache Path: ", path)
-		if err := os.WriteFile(path, body, 0644); err != nil {
+		if err := os.WriteFile(cache, body, 0644); err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
 
 	fmt.Println()
-	return path
+	return cache
+}
+
+var DownloadedContent []string
+
+func IsDownloaded(urlContent string) bool {
+	for _, v := range DownloadedContent {
+		if v == urlContent {
+			return true
+		}
+	}
+
+	DownloadedContent = append(DownloadedContent, urlContent)
+	return false
 }

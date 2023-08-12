@@ -3,17 +3,19 @@ package libraries
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"wpcache/models"
 
 	"golang.org/x/net/html"
 )
 
+// Parse the image value
 func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
-	var urls []string
-
-	for _, element := range n.Attr {
+	for i, element := range n.Attr {
 		if element.Key == "src" {
+			fmt.Println("Caching Img: ", element.Val)
+
 			uImg, err := url.Parse(element.Val)
 			if err != nil {
 				fmt.Printf("%s\n", err)
@@ -21,29 +23,25 @@ func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
 			}
 
 			// Check if already processed
-			ok := true
-			for _, v := range urls {
-				if v == element.Val {
-					ok = false
-					break
-				}
-			}
-			if !ok {
-				fmt.Println("Already processed: ", element.Val)
+			if IsWebp(uImg.EscapedPath()) {
+				fmt.Println("Already webp, ignoring")
 				fmt.Println()
 				continue
 			}
-			urls = append(urls, element.Val)
 
+			// Check origin
 			if u.Host == uImg.Host {
-				endPoint := fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, uImg.EscapedPath())
-				saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uImg.EscapedPath())
+				imgPath := cache(element.Val, uImg.EscapedPath(), w)
+				_, escPath := ProcessWebp(imgPath, uImg.EscapedPath(), w)
 
-				fmt.Printf("Caching Img: %s\n", element.Val)
-				imgPath := cache(endPoint, saveTo)
-				ProcessWebp(imgPath, uImg.EscapedPath(), w)
+				n.Attr[i].Val = fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, escPath)
+			} else {
+				fmt.Println("Outside origin ignoring")
+				fmt.Println()
 			}
 		} else if element.Key == "srcset" {
+			var srcsetUrl, srcsetOpt, srcset []string
+
 			valAntiComma := strings.Split(element.Val, ",")
 			for _, v := range valAntiComma {
 				valAntiSpace := strings.Split(v, " ")
@@ -54,38 +52,45 @@ func parse_img(n *html.Node, w models.Wordpress, u *url.URL) {
 						continue
 					}
 
-					uImg, err := url.Parse(v2)
+					uImg, err := url.ParseRequestURI(v2)
 					if err != nil {
-						fmt.Printf("%s\n", err)
-						continue
-					}
+						srcsetOpt = append(srcsetOpt, v2)
 
-					// Check if already processed
-					ok := true
-					for _, v3 := range urls {
-						if v3 == v2 {
-							ok = false
-							break
-						}
-					}
-					if !ok {
-						fmt.Println("Already processed: ", v2)
+						// fmt.Printf("%s\n", err)
 						fmt.Println()
 						continue
 					}
-					urls = append(urls, v2)
+
+					fmt.Println("Caching Img: ", v2)
+
+					// Check if already processed
+					if IsWebp(uImg.EscapedPath()) {
+						fmt.Println("Already webp, ignoring")
+						fmt.Println()
+						continue
+					}
 
 					if u.Host == uImg.Host {
-						endPoint := fmt.Sprintf("%s://%s%s", uImg.Scheme, uImg.Host, uImg.EscapedPath())
-						saveTo := fmt.Sprintf("%s/%s", w.TempFolder, uImg.EscapedPath())
+						imgPath := cache(v2, uImg.EscapedPath(), w)
 
-						fmt.Printf("Caching Img: %s\n", v2)
-						imgPath := cache(endPoint, saveTo)
-
-						ProcessWebp(imgPath, uImg.EscapedPath(), w)
+						_, urlWebp := ProcessWebp(imgPath, uImg.EscapedPath(), w)
+						srcsetUrl = append(srcsetUrl, urlWebp)
+					} else {
+						fmt.Println("Outside origin ignoring")
+						fmt.Println()
 					}
 				}
 			}
+
+			// Rebuild Srcset
+			for i, v := range srcsetUrl {
+				srcset = append(srcset, fmt.Sprintf("%s %s", v, srcsetOpt[i]))
+			}
+			n.Attr[i].Val = strings.Join(srcset, ", ")
 		}
 	}
+}
+
+func IsWebp(escapedPath string) bool {
+	return path.Ext(escapedPath) == ".webp"
 }

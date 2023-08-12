@@ -23,19 +23,25 @@ func CachePage() {
 		fmt.Println("Processing: ", w.Name)
 
 		GetPage(w)
-		GetAssets(w)
+		index := GetAssets(w)
+		RenderHtml(w, index)
 	}
 }
 
 func GetPage(w models.Wordpress) {
 	fmt.Println("Fetching HTML: ", w.Website)
 
-	saveTo := fmt.Sprintf("%s/%s", w.TempFolder, "index.html")
-	fileIndex := cache(w.Website, saveTo)
+	u, err := url.Parse(w.Website)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return
+	}
+
+	fileIndex := cache(fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
 	minify_index(w.MinifiedIndex, fileIndex)
 }
 
-func GetAssets(w models.Wordpress) {
+func GetAssets(w models.Wordpress) *html.Node {
 	fmt.Println("Fetching Assets: ", w.Website)
 	fmt.Println()
 
@@ -43,37 +49,107 @@ func GetAssets(w models.Wordpress) {
 	indexHtml, err := os.ReadFile(readTo)
 	if err != nil {
 		fmt.Printf("%s\n", err)
-		return
+		return nil
 	}
 
 	parsedIndexHtml, err := html.Parse(bytes.NewReader(indexHtml))
 	if err != nil {
 		fmt.Printf("%v\n", err)
-		return
+		return nil
 	}
 
 	u, err := url.Parse(w.Website)
 	if err != nil {
 		fmt.Printf("%v\n", err)
-		return
+		return parsedIndexHtml
 	}
 
 	parse_html(parsedIndexHtml, w, u)
+	append_bundle(parsedIndexHtml, u)
+
+	return parsedIndexHtml
 }
 
-func parse_html(n *html.Node, w models.Wordpress, u *url.URL) {
+func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node) {
+	var removechild []*html.Node
+
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
-			parse_style(n, w, u)
+			fmt.Println(n)
+			if parse_style(n, w, u) {
+				remove = n
+			}
 		case "img":
 			parse_img(n, w, u)
 		case "script":
-			parse_script(n, w, u)
+			if parse_script(n, w, u) {
+				remove = n
+			}
 		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parse_html(c, w, u)
+		if toRemove := parse_html(c, w, u); toRemove != nil {
+			removechild = append(removechild, toRemove)
+		}
+	}
+
+	for _, child := range removechild {
+		n.RemoveChild(child)
+	}
+
+	return
+}
+
+func append_bundle(n *html.Node, u *url.URL) {
+
+	if n.Type == html.ElementNode {
+		switch n.Data {
+		// Append Bundle Css
+		case "head":
+			n.AppendChild(&html.Node{
+				Type: html.ElementNode,
+				Data: "link",
+				Attr: []html.Attribute{
+					{
+						Key: "rel",
+						Val: "stylesheet",
+					},
+					{
+						Key: "id",
+						Val: "cache-bundle-css",
+					},
+					{
+						Key: "href",
+						Val: fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, "/wp-cache/css/bundle.min.css"),
+					},
+					{
+						Key: "media",
+						Val: "all",
+					},
+				},
+			})
+		// Append Bundle Js
+		case "body":
+			n.AppendChild(&html.Node{
+				Type: html.ElementNode,
+				Data: "script",
+				Attr: []html.Attribute{
+					{
+						Key: "id",
+						Val: "cache-bundle-js",
+					},
+					{
+						Key: "src",
+						Val: fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, "/wp-cache/js/bundle.min.js"),
+					},
+				},
+			})
+		}
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		append_bundle(c, u)
 	}
 }
