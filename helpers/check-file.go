@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 )
 
@@ -24,16 +25,12 @@ func CheckDir(dirPath string) (fileinfo fs.FileInfo) {
 	for i := range dirPathArr {
 		if i > 0 {
 			dirCurrent := path.Join(dirPathArr[:i+1]...)
-			// fmt.Println("Current ", dirCurrent)
-			// if runtime.GOOS == "linux" {
-			// 	pathOutput = fmt.Sprintf("/%s", pathOutput)
-			// } else if runtime.GOOS == "windows" {
-			// 	pathOutput = fmt.Sprintf("%s/%s", pathDirty[0], pathOutput)
-			// }
+			if runtime.GOOS == "linux" {
+				dirCurrent = fmt.Sprintf("/%s", dirCurrent)
+			}
 
 			if _, err := os.Stat(dirCurrent); os.IsNotExist(err) {
 				if err := os.Mkdir(dirCurrent, 0755); err != nil {
-					fmt.Println(err)
 					return
 				}
 			}
