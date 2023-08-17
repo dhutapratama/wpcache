@@ -51,7 +51,7 @@ func GetPage(w models.Wordpress) {
 		}
 	}
 
-	cache(fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
+	cache(fmt.Sprintf("%s://%s%s?cache=false", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
 }
 
 func GetAssets(w models.Wordpress) *html.Node {
