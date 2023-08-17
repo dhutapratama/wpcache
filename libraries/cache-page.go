@@ -83,6 +83,9 @@ func GetAssets(w models.Wordpress) *html.Node {
 	return parsedIndexHtml
 }
 
+var nStyle *html.Node
+var nJs *html.Node
+
 func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node) {
 	var removechild []*html.Node
 
@@ -92,12 +95,41 @@ func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node
 			if parse_style(n, w, u) {
 				remove = n
 			}
+		case "style":
+			nStyle = n
+			remove = n
 		case "img":
 			parse_img(n, w, u)
 		case "script":
 			if parse_script(n, w, u) {
 				remove = n
+			} else {
+				nJs = n
+				remove = n
 			}
+		}
+	}
+
+	if nStyle != nil {
+		if n != nStyle {
+			// var buff bytes.Buffer
+			// wBuff := io.Writer(&buff)
+			// html.Render(wBuff, n)
+
+			// fmt.Println(n.Data)
+
+			fileCss := cache_string([]byte(n.Data), w, ".css")
+			minify_css(w, fileCss)
+		}
+	} else if nJs != nil {
+		if n != nJs {
+			// var buff bytes.Buffer
+			// wBuff := io.Writer(&buff)
+			// html.Render(wBuff, n)
+
+			// fmt.Println()
+			fileJs := cache_string([]byte(n.Data), w, ".js")
+			minify_js(w, fileJs)
 		}
 	}
 
@@ -105,6 +137,12 @@ func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node
 		if toRemove := parse_html(c, w, u); toRemove != nil {
 			removechild = append(removechild, toRemove)
 		}
+	}
+
+	if n == nStyle {
+		nStyle = nil
+	} else if n == nJs {
+		nJs = nil
 	}
 
 	for _, child := range removechild {
