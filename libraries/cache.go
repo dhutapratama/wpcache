@@ -12,11 +12,7 @@ import (
 
 // Download content and save to cache folder.
 func cache(endPoint, escapedPath string, w models.Wordpress) (cache string) {
-
 	cache = path.Clean(fmt.Sprintf("%s/%s", w.TempFolder, escapedPath))
-	if IsDownloaded(endPoint) {
-		return cache
-	}
 
 	// Check existing file
 	if f, exist := helpers.CheckFile(cache); exist {
@@ -27,6 +23,10 @@ func cache(endPoint, escapedPath string, w models.Wordpress) (cache string) {
 			fmt.Println("Cache Path: ", cache)
 			return
 		}
+	}
+
+	if IsDownloaded(endPoint) {
+		return cache
 	}
 
 	// Download content and save to cachePath

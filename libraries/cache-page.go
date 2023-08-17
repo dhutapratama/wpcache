@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"time"
+	"wpcache/helpers"
 	"wpcache/models"
 	"wpcache/vars"
 
@@ -36,6 +38,17 @@ func GetPage(w models.Wordpress) {
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return
+	}
+
+	indexHtml := path.Clean(fmt.Sprintf("%s/%s", w.TempFolder, "index.html"))
+
+	// Check existing file
+	if f, exist := helpers.CheckFile(indexHtml); exist {
+		if f.IsDir() {
+			os.RemoveAll(indexHtml)
+		} else {
+			os.Remove(indexHtml)
+		}
 	}
 
 	cache(fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, u.EscapedPath()), "index.html", w)
