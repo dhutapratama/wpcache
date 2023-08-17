@@ -1,8 +1,9 @@
 [
  {
   "name": "Dietnyaman",
-  "website": "https://dietnyaman.com",
+  "website": "https://dietnyaman.com?cache=false",
   "root_folder": "D:/1_WORK/golang/wpcache/root/",
-  "temp_folder": "D:/1_WORK/golang/wpcache/temp/"
+  "temp_folder": "D:/1_WORK/golang/wpcache/temp/",
+  "skip_render_js": true
  }
 ]

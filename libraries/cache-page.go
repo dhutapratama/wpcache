@@ -92,42 +92,37 @@ func parse_html(n *html.Node, w models.Wordpress, u *url.URL) (remove *html.Node
 	if n.Type == html.ElementNode {
 		switch n.Data {
 		case "link":
-			if parse_style(n, w, u) {
-				remove = n
+			if !w.SkipRenderCss {
+				if parse_style(n, w, u) {
+					remove = n
+				}
 			}
 		case "style":
-			nStyle = n
-			remove = n
+			if !w.SkipRenderCss {
+				nStyle = n
+				remove = n
+			}
 		case "img":
 			parse_img(n, w, u)
 		case "script":
-			if parse_script(n, w, u) {
-				remove = n
-			} else {
-				nJs = n
-				remove = n
+			if !w.SkipRenderJs {
+				if parse_script(n, w, u) {
+					remove = n
+				} else {
+					nJs = n
+					remove = n
+				}
 			}
 		}
 	}
 
 	if nStyle != nil {
 		if n != nStyle {
-			// var buff bytes.Buffer
-			// wBuff := io.Writer(&buff)
-			// html.Render(wBuff, n)
-
-			// fmt.Println(n.Data)
-
 			fileCss := cache_string([]byte(n.Data), w, ".css")
 			minify_css(w, fileCss)
 		}
 	} else if nJs != nil {
 		if n != nJs {
-			// var buff bytes.Buffer
-			// wBuff := io.Writer(&buff)
-			// html.Render(wBuff, n)
-
-			// fmt.Println()
 			fileJs := cache_string([]byte(n.Data), w, ".js")
 			minify_js(w, fileJs)
 		}
